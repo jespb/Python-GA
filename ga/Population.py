@@ -14,7 +14,7 @@ import time
 class Population:
 	population_size = None
 	max_generation = None
-	tournament_size = None
+	model_name = None
 	elitism_size = None
 	verbose = None
 	threads = None
@@ -22,6 +22,7 @@ class Population:
 
 	population = None
 	bestIndividual = None
+	actualBestIndividual = None
 	currentGeneration = 0
 
 	trainingAccuracyOverTime = None
@@ -30,12 +31,14 @@ class Population:
 	testWaFOverTime = None
 	trainingKappaOverTime = None
 	testKappaOverTime = None
+	sizeOverTime = None
+	featuresOverTime = None
 
 	generationTimes = None
 
 
 	def __init__(self, Tr_x, Tr_y, Te_x, Te_y, population_size, max_generation, 
-		tournament_size, elitism_size, threads, rng, verbose):
+		elitism_size, model_name, threads, rng, verbose):
 
 		self.Tr_x = Tr_x
 		self.Tr_y = Tr_y
@@ -43,21 +46,23 @@ class Population:
 		self.Te_y = Te_y
 		self.population_size = population_size
 		self.max_generation = max_generation
-		self.tournament_size = tournament_size
+		self.model_name = model_name
 		self.elitism_size = elitism_size
 		self.threads = threads
 		self.rng = rng
 		self.verbose = verbose
 
+
 		self.population = []
 
 		while len(self.population) < self.population_size:
-			ind = Individual()
-			ind.create(self.rng, size = len(self.Tr_x.columns) )
+			ind = Individual(model_name = self.model_name)
+			ind.create(self.rng, len(Tr_x.columns))
 			self.population.append(ind)
 
 		self.bestIndividual = self.population[0]
 		self.bestIndividual.fit(self.Tr_x, self.Tr_y)
+		self.actualBestIndividual = self.bestIndividual
 
 
 		if not self.Te_x is None:
@@ -67,6 +72,8 @@ class Population:
 			self.testWaFOverTime = []
 			self.trainingKappaOverTime = []
 			self.testKappaOverTime = []
+			self.sizeOverTime = []
+			self.featuresOverTime = []
 			self.generationTimes = []
 
 
@@ -104,6 +111,8 @@ class Population:
 				self.testWaFOverTime.append(self.bestIndividual.getWaF(self.Te_x, self.Te_y, pred="Te"))
 				self.trainingKappaOverTime.append(self.bestIndividual.getKappa(self.Tr_x, self.Tr_y, pred="Tr"))
 				self.testKappaOverTime.append(self.bestIndividual.getKappa(self.Te_x, self.Te_y, pred="Te"))
+				self.sizeOverTime.append(self.bestIndividual.getSize())
+				self.featuresOverTime.append(str(self.bestIndividual))
 				self.generationTimes.append(duration)
 
 		if self.verbose:
@@ -136,14 +145,15 @@ class Population:
 
 
 		# Update best individual
-		if self.population[0] > self.bestIndividual:
-			self.bestIndividual = self.population[0]
+		if self.population[0] > self.actualBestIndividual:
+			self.actualBestIndividual = self.population[0]
+		self.bestIndividual = self.population[0]
 
 		# Generating Next Generation
 		newPopulation = []
 		newPopulation.extend(getElite(self.population, self.elitism_size))
 		while len(newPopulation) < self.population_size:
-			offspring = getOffspring(self.rng, self.population, self.tournament_size)
+			offspring = getOffspring(self.rng, self.population)
 			newPopulation.extend(offspring)
 		self.population = newPopulation[:self.population_size]
 
@@ -151,11 +161,16 @@ class Population:
 		end = time.time()
 
 		# Debug
-		if self.verbose and self.currentGeneration%5==0:
+		if self.verbose and self.currentGeneration%1==0:
 			if not self.Te_x is None:
-				print("   > Gen #"+str(self.currentGeneration)+":  Tr-Acc: "+ "%.6f" %self.bestIndividual.getAccuracy(self.Tr_x, self.Tr_y, pred="Tr")+" // Te-Acc: "+ "%.6f" %self.bestIndividual.getAccuracy(self.Te_x, self.Te_y, pred="Te") + " // Time: " + str(end- begin) )
+				print("   > Gen # %3d   Tr-Acc: %.4f  Te-Acc: %.4f   Size:%4d   Time: %.5f" % 
+					(self.currentGeneration, 
+						self.bestIndividual.getAccuracy(self.Tr_x, self.Tr_y, pred="Tr"), 
+						self.bestIndividual.getAccuracy(self.Te_x, self.Te_y, pred="Te"), 
+						self.bestIndividual.getSize() , 
+						end- begin) )
 			else:
-				print("   > Gen #"+str(self.currentGeneration)+":  Tr-Acc: "+ "%.6f" %self.bestIndividual.getAccuracy(self.Tr_x, self.Tr_y, pred="Tr"))
+				print("   > Gen #"+str(self.currentGeneration)+":  Tr-Acc: "+ "%.6f" %self.actualBestIndividual.getAccuracy(self.Tr_x, self.Tr_y, pred="Tr"))
 
 
 	def predict(self, sample):
@@ -184,6 +199,12 @@ class Population:
 
 	def getTestKappaOverTime(self):
 		return self.testKappaOverTime
+
+	def getSizeOverTime(self):
+		return self.sizeOverTime
+
+	def getFeaturesOverTime(self):
+		return self.featuresOverTime
 
 	def getGenerationTimes(self):
 		return self.generationTimes

@@ -8,17 +8,22 @@ from .Individual import Individual
 # Copyright ©2021 J. E. Batista
 #
 
+def roulette(rng, population):
+  
+    # Computes the totallity of the features fitness
+    max = sum([indiv.getFitness() for indiv in population])
 
-def tournament(rng, population,n):
-	'''
-	Selects "n" Individuals from the population and return a 
-	single Individual.
+    selection = rng.random() * max
 
-	Parameters:
-	population (list): A list of Individuals, sorted from best to worse.
-	'''
-	candidates = [rng.randint(0,len(population)-1) for i in range(n)]
-	return population[min(candidates)]
+    i = -1
+    while selection >= 0:
+    	i += 1
+    	#print( "%.5f %.5f" % (population[i].getFitness(), selection) )
+    	selection -= population[i].getFitness()
+    
+	
+    return population[i]
+
 
 
 def getElite(population,n):
@@ -31,7 +36,7 @@ def getElite(population,n):
 	return population[:n]
 
 
-def getOffspring(rng, population, tournament_size):
+def getOffspring(rng, population):
 	'''
 	Genetic Operator: Selects a genetic operator and returns a list with the 
 	offspring Individuals. The crossover GOs return two Individuals and the
@@ -41,19 +46,29 @@ def getOffspring(rng, population, tournament_size):
 	Parameters:
 	population (list): A list of Individuals, sorted from best to worse.
 	'''
-	isCross = rng.random()<0.5
-	desc = None
 
-	if isCross:
-		desc = GAXO(rng, population, tournament_size)
-	else:
-		desc = GAMUT(rng, population, tournament_size)
-	
-	return desc
+	p1, p2 = roulette(rng, population), roulette(rng, population)
+
+	isCross = rng.random()<0.7
+	isMut1 = rng.random()<0.5
+	isMut2 = rng.random()<0.5
+
+	if isCross <= 0.7:
+		p1, p2 = GAXO(rng,p1,p2)
+
+	if isMut1 <= 1/len(population):
+		p1 = GAMUT(rng,p1)
+	if isMut2 <= 1/len(population):
+		p2 = GAMUT(rng,p2)
+
+	p1.fixIndividual(rng)
+	p2.fixIndividual(rng)
+
+	return [p1,p2]
 
 
 
-def GAXO(rng, population, tournament_size):
+def GAXO(rng, p1, p2):
 	'''
 	Randomly selects one index in the feature array and creates two individuals, 
 	swapping the values the arrays after the breaking point
@@ -61,11 +76,9 @@ def GAXO(rng, population, tournament_size):
 	Parameters:
 	population (list): A list of Individuals, sorted from best to worse.
 	'''
-	ind1 = tournament(rng, population, tournament_size)
-	ind2 = tournament(rng, population, tournament_size)
 
-	d1 = ind1.getArray()
-	d2 = ind2.getArray()
+	d1 = p1.getArray()
+	d2 = p2.getArray()
 
 	cut = rng.randint(0,len(d1)-1)
 
@@ -74,33 +87,29 @@ def GAXO(rng, population, tournament_size):
 
 	ret = []
 	for s in [s1,s2]:
-		i = Individual()
+		i = Individual(model_name = p1.model_name)
 		i.copy(s)
 		ret.append(i)
 
 	return ret
 
 
-def GAMUT(rng, population, tournament_size):
+def GAMUT(rng, p):
 	'''
 	Randomly selects one position in a individual and inverts its value
 
 	Parameters:
 	population (list): A list of Individuals, sorted from best to worse.
 	'''
-	ind1 = tournament(rng, population, tournament_size)
+	d1 = p.getArray()
 
-	d1 = ind1.getArray()
+	for i in range(len(d1)):
+		isFlip = rng.random() < 1/len(d1)
+		d1[i] = (d1[i]+1)%2
 
-	select = rng.randint(0,len(d1)-1)
 
-	d1[select] = (d1[select]+1)%2
-
-	ret = []
-	for s in [d1]:
-		i = Individual()
-		i.copy(s)
-		ret.append(i)
-
-	return ret
+	offspring = Individual(model_name = p.model_name)
+	offspring.copy(d1)
+	
+	return offspring
 

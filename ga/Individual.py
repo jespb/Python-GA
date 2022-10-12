@@ -1,4 +1,4 @@
-from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
 
 import pandas as pd
 
@@ -6,6 +6,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
 from sklearn.metrics import cohen_kappa_score
 
+import warnings
+warnings.filterwarnings("ignore")
 
 # 
 # By using this file, you are agreeing to this product's EULA
@@ -25,37 +27,57 @@ class Individual:
 	testPredictions = None
 	fitness = None
 
-	model_name = ["SVC"][0]
+	model_name = None
 	model = None
+
+	size=None
 
 	fitnessType = ["Accuracy", "WAF", "2FOLD"][0]
 
-	def __init__(self):
+	def __init__(self, model_name = "DT"):
+		self.model_name = model_name
 		pass
 
 	def create(self,rng, size):
 		self.array = [0]*size
 		for i in range(size):
-			self.array[i] = rng.randint(0,1)
+			self.array[i] = 1 if rng.random() > 0.5 else 0
+		self.fixIndividual(rng)
+
+	#def create(self,rng, size):
+	#	self.array = [0]*size
+	#	for i in range(size):
+	#		self.array[i] = rng.randint(0,1)
+	#	self.fixIndividual(rng)
 		
 	def copy(self, array):
 		self.array = array[:]
 
+	def fixIndividual(self, rng):
+
+		if sum(self.array) == 0:
+			self.array[rng.randint(0,len(self.array)-1)] = 1
+
 
 
 	def __gt__(self, other):
-		return self.getFitness() >  other.getFitness()
+		sf = self.getFitness()
+		of = other.getFitness()
 
-	def __ge__(self, other):
-		return self.getFitness() >= other.getFitness()
+		ss = self.getSize()
+		os = other.getSize()
+
+		return sf > of or (sf == of and ss < os)
+
 
 	def __str__(self):
-		return str(self.array)
+		return str(self.array).replace(",",":")
 
 
 	def createModel(self):
-		if self.model_name == "SVC":
-			return SVC(gamma="auto", kernel="linear")
+		if self.model_name == "DT":	
+			return DecisionTreeClassifier(random_state=42, max_depth=6) 
+
 
 	def fit(self, Tr_x, Tr_y):
 		'''
@@ -72,6 +94,14 @@ class Individual:
 			self.model.fit(hyper_X,Tr_y)
 
 
+	def getSize(self):
+		if self.size == None:
+			count = 0
+			for v in self.array:
+				if v != 0:
+					count += 1
+			self.size = count
+		return self.size
 
 	def getFitness(self, tr_x = None, tr_y = None):
 		'''
@@ -89,6 +119,7 @@ class Individual:
 				self.getTrainingPredictions()
 				acc = accuracy_score(self.trainingPredictions, self.training_Y)
 				self.fitness = acc 
+
 
 			if self.fitnessType == "WAF":
 				self.fit(self.training_X, self.training_Y)

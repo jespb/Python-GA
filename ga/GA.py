@@ -23,8 +23,10 @@ class GA:
 
 	population_size = None
 	max_generation = None
-	tournament_size = None
 	elitism_size = None
+
+	model_name = None
+
 	threads = None
 	verbose = None
 
@@ -35,12 +37,12 @@ class GA:
 			raise ClassifierNotTrainedError("The classifier must be trained using the fit(Tr_X, Tr_Y) method before being used.")
 
 
-	def __init__(self, population_size = 500, max_generation = 100, tournament_size = 5, 
-		elitism_size = 1, threads=1, random_state = 42, verbose = True):
+	def __init__(self, population_size = 500, max_generation = 100,	elitism_size = 1, 
+		model_name = "DT", threads=1, random_state = 42, verbose = True):
 
 		self.population_size = population_size
 		self.max_generation = max_generation
-		self.tournament_size = tournament_size
+		self.model_name = model_name
 		self.elitism_size = elitism_size
 		self.threads = max(1, threads)
 
@@ -60,12 +62,12 @@ class GA:
 			print("Training a model with the following parameters: ", end="")
 			print("{Population Size : "+str(self.population_size)+"}, ", end="")
 			print("{Max Generation : "+str(self.max_generation)+"}, ", end="")
-			print("{Tournament Size : "+str(self.tournament_size)+"}, ", end="")
+			print("{Model Name : "+self.model_name+"}, ", end="")
 			print("{Elitism Size : "+str(self.elitism_size)+"}, ", end="")
 			print("{Threads : "+str(self.threads)+"}")
 
 		self.population = Population(Tr_X, Tr_Y, Te_X, Te_Y, self.population_size, 
-			self.max_generation, self.tournament_size, self.elitism_size, self.threads, 
+			self.max_generation, self.elitism_size, self.model_name, self.threads, 
 			self.rng, self.verbose)
 		
 		self.population.train()
@@ -109,6 +111,22 @@ class GA:
 		self.checkIfTrained()
 
 		return [self.population.getTrainingKappaOverTime(), self.population.getTestKappaOverTime()]
+
+	def getSizeOverTime(self):
+		'''
+		Returns the size values of the best model in each generation.
+		'''
+		self.checkIfTrained()
+
+		return self.population.getSizeOverTime()
+
+	def getFeaturesOverTime(self):
+		'''
+		Returns the size values of the best model in each generation.
+		'''
+		self.checkIfTrained()
+
+		return self.population.getFeaturesOverTime()
 
 	def getGenerationTimes(self):
 		'''

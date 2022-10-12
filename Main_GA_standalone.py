@@ -52,7 +52,7 @@ def run(r,dataset):
 	Tr_X, Te_X, Tr_Y, Te_Y = openAndSplitDatasets(dataset,r)
 
 	# Train a model
-	model = GA(POPULATION_SIZE, MAX_GENERATION, TOURNAMENT_SIZE, ELITISM_SIZE, 
+	model = GA(POPULATION_SIZE, MAX_GENERATION, ELITISM_SIZE, MODEL_NAME, 
 		THREADS, RANDOM_STATE, VERBOSE)
 	model.fit(Tr_X, Tr_Y, Te_X, Te_Y)
 
@@ -61,7 +61,8 @@ def run(r,dataset):
 	accuracy  = model.getAccuracyOverTime()
 	waf       = model.getWaFOverTime()
 	kappa     = model.getKappaOverTime()
-	model_str = str(model.getBestIndividual())
+	size      = model.getSizeOverTime()
+	model_str = model.getFeaturesOverTime()
 	times     = model.getGenerationTimes()
 	
 	tr_acc     = accuracy[0]
@@ -75,7 +76,7 @@ def run(r,dataset):
 		print("> Ending run:")
 		print("  > ID:", r)
 		print("  > Dataset:", dataset)
-		print("  > Final model:", model_str)
+		print("  > Final model:", model_str[-1])
 		print("  > Training accuracy:", tr_acc[-1])
 		print("  > Test accuracy:", te_acc[-1])
 		print()
@@ -83,6 +84,7 @@ def run(r,dataset):
 	return (tr_acc,te_acc,
 			tr_waf,te_waf,
 			tr_kappa,te_kappa,
+			size,
 			times,
 			model_str)
 			
@@ -112,27 +114,27 @@ def callGA():
 			attributes= ["Training-Accuracy","Test-Accuracy",
 						 "Training-WaF", "Test-WaF",
 						 "Training-Kappa", "Test-Kappa",
-						 "Time",	
+						 "Size", "Time",	
 						 "Final_Model"]
 
 			# Write attributes with value over time
-			for ai in range(len(attributes)-1):
+			for ai in range(len(attributes)):
 				for i in range(RUNS):	
 					file.write("\n"+attributes[ai]+","+str(i)+",")
 					file.write( ",".join([str(val) for val in results[i][ai]]))
 				file.write("\n")
 
 			# Write the final models
-			for i in range(len(results)):
-				file.write("\n"+attributes[-1]+","+str(i)+",")
-				file.write(results[i][-1])
-			file.write("\n")
+			#for i in range(len(results)):
+			#	file.write("\n"+attributes[-1]+","+str(i)+",")
+			#	file.write(results[i][-1])
+			#file.write("\n")
 
 			# Write some parameters
 			file.write("\n\nParameters")
 			file.write("\nPopulation Size,"+str(POPULATION_SIZE))
 			file.write("\nMax Generation,"+str(MAX_GENERATION))
-			file.write("\nTournament Size,"+str(TOURNAMENT_SIZE))
+			file.write("\nModel Name,"+MODEL_NAME)
 			file.write("\nElitism Size,"+str(ELITISM_SIZE))
 			file.write("\nThreads,"+str(THREADS))
 			file.write("\nRandom State,"+str(list(range(RUNS))))
