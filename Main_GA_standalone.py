@@ -96,7 +96,7 @@ def callGA():
 		pass
 
 	for dataset in DATASETS:
-		outputFilename = OUTPUT_DIR+"ga_"+ dataset
+		outputFilename = OUTPUT_DIR+"GA_"+ dataset
 		if not os.path.exists(outputFilename):
 			results = []
 
