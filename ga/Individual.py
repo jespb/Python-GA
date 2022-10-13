@@ -14,7 +14,7 @@ warnings.filterwarnings("ignore")
 #
 # This product can be obtained in https://github.com/jespb/Python-GA
 #
-# Copyright ©2021 J. E. Batista
+# Copyright ©2021-2022 J. E. Batista
 #
 
 class Individual:
