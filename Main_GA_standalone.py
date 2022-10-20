@@ -89,11 +89,42 @@ def run(r,dataset):
 			model_str)
 			
 
+def writeToFile(filename, attributes, results):
+	# Write output header
+	file = open(filename , "w")
+	file.write("Attribute,Run,")
+	for i in range(len(results[0][0])):
+		file.write(str(i)+",")
+	file.write("\n")
+	
+	# Write attributes with value over time
+	print("SSS", len(results))
+	for ai in range(len(attributes)):
+		for i in range(len(results)):	
+			file.write("\n"+attributes[ai]+","+str(i)+",")
+			file.write( ",".join([str(val) for val in results[i][ai]]))
+		file.write("\n")
+
+	# Write some parameters
+	file.write("\n\nParameters")
+	file.write("\nPopulation Size,"+str(POPULATION_SIZE))
+	file.write("\nMax Generation,"+str(MAX_GENERATION))
+	file.write("\nModel Name,"+MODEL_NAME)
+	file.write("\nElitism Size,"+str(ELITISM_SIZE))
+	file.write("\nThreads,"+str(THREADS))
+	file.write("\nRandom State,"+str(list(range(RUNS))))
+
+	file.close()
+
+
 def callGA():
 	try:
 		os.makedirs(OUTPUT_DIR)
 	except:
 		pass
+
+	attributes= ["Training-Accuracy","Test-Accuracy",  "Training-WaF", "Test-WaF",
+						 "Training-Kappa", "Test-Kappa", "Size", "Time", "Final_Model"]
 
 	for dataset in DATASETS:
 		outputFilename = OUTPUT_DIR+"GA_"+ dataset
@@ -103,44 +134,9 @@ def callGA():
 			# Run the algorithm several times
 			for r in range(RUNS):
 				results.append(run(r,dataset))
-
-			# Write output header
-			file = open(outputFilename , "w")
-			file.write("Attribute,Run,")
-			for i in range(MAX_GENERATION):
-				file.write(str(i)+",")
-			file.write("\n")
-		
-			attributes= ["Training-Accuracy","Test-Accuracy",
-						 "Training-WaF", "Test-WaF",
-						 "Training-Kappa", "Test-Kappa",
-						 "Size", "Time",	
-						 "Final_Model"]
-
-			# Write attributes with value over time
-			for ai in range(len(attributes)):
-				for i in range(RUNS):	
-					file.write("\n"+attributes[ai]+","+str(i)+",")
-					file.write( ",".join([str(val) for val in results[i][ai]]))
-				file.write("\n")
-
-			# Write the final models
-			#for i in range(len(results)):
-			#	file.write("\n"+attributes[-1]+","+str(i)+",")
-			#	file.write(results[i][-1])
-			#file.write("\n")
-
-			# Write some parameters
-			file.write("\n\nParameters")
-			file.write("\nPopulation Size,"+str(POPULATION_SIZE))
-			file.write("\nMax Generation,"+str(MAX_GENERATION))
-			file.write("\nModel Name,"+MODEL_NAME)
-			file.write("\nElitism Size,"+str(ELITISM_SIZE))
-			file.write("\nThreads,"+str(THREADS))
-			file.write("\nRandom State,"+str(list(range(RUNS))))
+				writeToFile(outputFilename, attributes, results)
 
 
-			file.close()
 		else:
 			print("Filename: " + outputFilename +" already exists.")
 
