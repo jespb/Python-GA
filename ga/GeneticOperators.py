@@ -53,12 +53,12 @@ def getOffspring(rng, population):
 	isMut1 = rng.random()<0.5
 	isMut2 = rng.random()<0.5
 
-	if isCross <= 0.7:
+	if isCross :
 		p1, p2 = GAXO(rng,p1,p2)
 
-	if isMut1 <= 1/len(population):
+	if isMut1:
 		p1 = GAMUT(rng,p1)
-	if isMut2 <= 1/len(population):
+	if isMut2 :
 		p2 = GAMUT(rng,p2)
 
 	p1.fixIndividual(rng)
